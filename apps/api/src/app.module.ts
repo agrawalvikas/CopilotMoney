@@ -5,6 +5,9 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { TestController } from './test/test.controller';
 import { TellerModule } from './teller/teller.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { EncryptionModule } from './encryption/encryption.module';
+import { ConnectionsModule } from './connections/connections.module';
 
 @Module({
   imports: [
@@ -14,6 +17,9 @@ import { TellerModule } from './teller/teller.module';
     }),
     AuthModule,
     TellerModule,
+    PrismaModule,
+    EncryptionModule,
+    ConnectionsModule,
   ],
   controllers: [AppController, TestController],
   providers: [AppService],

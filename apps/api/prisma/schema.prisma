@@ -12,9 +12,21 @@ model User {
   id         String     @id @default(cuid())
   clerkId    String     @unique // The ID from Clerk
   email      String     @unique
-  accounts   Account[]
-  categories Category[]
-  createdAt  DateTime   @default(now())
+  accounts    Account[]
+  categories  Category[]
+  connections Connection[] // Add relation to Connection
+  createdAt   DateTime     @default(now())
+}
+
+// Represents a connection to a financial institution via Teller
+model Connection {
+  id              String   @id @default(cuid())
+  tellerId        String   @unique // The ID from Teller for this connection
+  institutionName String
+  accessToken     String // This will be the encrypted token
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
 }
 
 // Represents a connected financial account

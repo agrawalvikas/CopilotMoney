@@ -2,7 +2,7 @@ import { Inject, Injectable, InternalServerErrorException, NotFoundException } f
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { CreateConnectionDto } from './dto/create-connection.dto';
-import { ClerkClient } from '@clerk/backend';
+import type { ClerkClient } from '@clerk/backend';
 
 @Injectable()
 export class ConnectionsService {

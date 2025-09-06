@@ -1,0 +1,19 @@
+{
+  "name": "finance-tracker-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A monorepo for the finance tracker application",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "workspaces": [
+    "apps/*"
+  ],
+  "devDependencies": {
+    "turbo": "^1.13.3"
+  }
+}

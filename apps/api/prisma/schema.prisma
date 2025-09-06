@@ -1,0 +1,60 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model managed by Clerk, but we have a reference
+model User {
+  id         String     @id @default(cuid())
+  clerkId    String     @unique // The ID from Clerk
+  email      String     @unique
+  accounts   Account[]
+  categories Category[]
+  createdAt  DateTime   @default(now())
+}
+
+// Represents a connected financial account
+model Account {
+  id              String        @id @default(cuid())
+  name            String
+  mask            String // Last 4 digits, e.g., "4281"
+  type            String // e.g., "checking", "credit_card"
+  balance         Decimal
+  currency        String        @default("USD")
+  institutionName String
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  transactions    Transaction[]
+}
+
+// Represents a single financial transaction
+model Transaction {
+  id          String    @id @default(cuid())
+  description String // The merchant name, e.g., "Starbucks"
+  amount      Decimal
+  date        DateTime
+  currency    String    @default("USD")
+  type        String // "debit" or "credit"
+  isManual    Boolean   @default(false)
+  notes       String?
+  accountId   String
+  account     Account   @relation(fields: [accountId], references: [id])
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+}
+
+// Transaction categories
+model Category {
+  id           String        @id @default(cuid())
+  name         String
+  // If userId is null, it's a default system category
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@unique([name, userId]) // A user cannot have two categories with the same name
+}

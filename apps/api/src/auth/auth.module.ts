@@ -7,6 +7,6 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [PassportModule, ConfigModule],
   providers: [ClerkStrategy, ClerkClientProvider],
-  exports: [PassportModule],
+  exports: [PassportModule, ClerkClientProvider], // Export the provider
 })
 export class AuthModule {}

@@ -5,7 +5,7 @@ import { AuthUser } from '../auth/auth-user.decorator';
 
 import { CreateConnectionDto } from './dto/create-connection.dto';
 
-@Controller('connections')
+@Controller('/api/v1/connections')
 @UseGuards(ClerkAuthGuard)
 export class ConnectionsController {
   constructor(private readonly connectionsService: ConnectionsService) {}
@@ -13,8 +13,9 @@ export class ConnectionsController {
   @Post()
   create(
     @Body() createConnectionDto: CreateConnectionDto,
-    @AuthUser() authUser: { id: string },
+    @AuthUser() auth: { userId: string },
   ) {
-    return this.connectionsService.create(createConnectionDto, authUser.id);
+    // auth.userId is the clerkId from the token
+    return this.connectionsService.create(createConnectionDto, auth.userId);
   }
 }

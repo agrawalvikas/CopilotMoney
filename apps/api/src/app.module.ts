@@ -13,7 +13,7 @@ import { ConnectionsModule } from './connections/connections.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
     }),
     AuthModule,
     TellerModule,

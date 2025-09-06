@@ -12,30 +12,32 @@ export class TellerService {
   ) {}
 
   async syncData(accessToken: string, userId: string) {
-    const accounts = await this.tellerClient.accounts.list({ accessToken });
+    const accounts = await this.tellerClient.account.list({ accessToken });
 
     for (const account of accounts) {
+      const balance = await this.tellerClient.account.balances(account.id, { accessToken });
+
       const savedAccount = await this.prisma.account.upsert({
         where: { tellerAccountId: account.id },
         create: {
           tellerAccountId: account.id,
           name: account.name,
-          mask: account.mask,
-          type: account.type,
-          balance: new Decimal(account.balance),
+          mask: account.last_four,
+          type: account.type === 'depository' ? 'checking' : 'credit_card',
+          balance: new Decimal(balance.available),
           currency: account.currency,
           institutionName: account.institution.name,
           userId,
         },
         update: {
-          balance: new Decimal(account.balance),
+          balance: new Decimal(balance.available),
         },
       });
 
-      const transactions = await this.tellerClient.transactions.list({
-        accessToken,
-        accountId: account.id,
-      });
+      const transactions = await this.tellerClient.transactions.list(
+        account.id,
+        { accessToken },
+      );
 
       for (const transaction of transactions) {
         await this.prisma.transaction.upsert({
@@ -45,7 +47,6 @@ export class TellerService {
             description: transaction.description,
             amount: new Decimal(transaction.amount),
             date: new Date(transaction.date),
-            currency: transaction.currency,
             type: transaction.type,
             accountId: savedAccount.id,
           },

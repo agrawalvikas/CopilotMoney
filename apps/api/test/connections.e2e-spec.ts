@@ -3,9 +3,11 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 const request = require('supertest');
 import { AppModule } from '../src/app.module';
 import { ClerkAuthGuard } from '../src/auth/clerk-auth.guard';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('ConnectionsController (e2e)', () => {
   let app: INestApplication;
+  let prisma: PrismaService;
 
   const mockUser = {
     id: 'user_2ikwGzV6a7y2FpYQ0A1B2C3D4E5', // A sample Clerk user ID
@@ -40,9 +42,15 @@ describe('ConnectionsController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    prisma = app.get<PrismaService>(PrismaService);
     // Use a validation pipe to ensure DTOs are validated
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
+  });
+
+  beforeEach(async () => {
+    await prisma.connection.deleteMany();
+    await prisma.user.deleteMany();
   });
 
   afterAll(async () => {

@@ -36,7 +36,7 @@ export class TellerService {
 
       const transactions = await this.tellerClient.transactions.list(
         account.id,
-        { accessToken },
+        { accessToken, limit: 100, cursor: '' },
       );
 
       for (const transaction of transactions) {

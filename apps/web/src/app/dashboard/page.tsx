@@ -1,4 +1,5 @@
 import { UserButton } from "@clerk/nextjs";
+import AddAccountButton from "@/components/add-account-button";
 
 export default function DashboardPage() {
   return (
@@ -20,6 +21,9 @@ export default function DashboardPage() {
                 This page is protected and only accessible to authenticated
                 users.
               </p>
+              <div className="mt-6">
+                <AddAccountButton />
+              </div>
             </div>
           </div>
         </div>

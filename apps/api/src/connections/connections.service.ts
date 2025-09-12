@@ -3,12 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { CreateConnectionDto } from './dto/create-connection.dto';
 import type { ClerkClient } from '@clerk/backend';
+import { TellerService } from '../teller/teller.service';
 
 @Injectable()
 export class ConnectionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly encryptionService: EncryptionService,
+    private readonly tellerService: TellerService,
     @Inject('ClerkClient') private readonly clerkClient: ClerkClient,
   ) {}
 
@@ -44,6 +46,12 @@ export class ConnectionsService {
         accessToken: encryptedAccessToken,
       },
     });
+
+    // 5. Immediately trigger a sync for the new connection
+    // This is not awaited, as it can be a long-running process.
+    // The user doesn't need to wait for it to complete.
+    this.tellerService.syncData(accessToken, user.id);
+
 
     // It's good practice not to return the token, even if it's encrypted.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

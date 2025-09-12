@@ -32,7 +32,7 @@ model Connection {
 // Represents a connected financial account
 model Account {
   id              String        @id @default(cuid())
-  tellerAccountId String        @unique // The ID from Teller for this account
+  tellerAccountId String?       @unique // The ID from Teller for this account
   name            String
   mask            String // Last 4 digits, e.g., "4281"
   type            String // e.g., "checking", "credit_card"

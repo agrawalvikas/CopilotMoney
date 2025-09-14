@@ -14,6 +14,12 @@ export class TellerService {
   async syncData(accessToken: string, userId: string) {
     const accounts = await this.tellerClient.account.list({ accessToken });
 
+    // Gracefully handle cases where Teller API returns no accounts or a non-iterable response
+    if (!accounts || typeof accounts[Symbol.iterator] !== 'function') {
+      console.log('No accounts returned from Teller or response is not iterable. Skipping sync.');
+      return { status: 'ok', message: 'No accounts found to sync.' };
+    }
+
     for (const account of accounts) {
       const balance = await this.tellerClient.account.balances(account.id, { accessToken });
 
@@ -38,6 +44,11 @@ export class TellerService {
         account.id,
         { accessToken, limit: 100, cursor: '' },
       );
+
+      if (!transactions || typeof transactions[Symbol.iterator] !== 'function') {
+        console.log(`No transactions returned for account ${account.id} or response is not iterable. Continuing to next account.`);
+        continue;
+      }
 
       for (const transaction of transactions) {
         await this.prisma.transaction.upsert({

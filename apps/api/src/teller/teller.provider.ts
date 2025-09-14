@@ -56,6 +56,7 @@ export const TellerClientProvider = {
     const tellerClient = new TellerClient({
       certificatePath: certPath,
       privateKeyPath: privateKeyPath,
+      environment: configService.get<string>('TELLER_ENV', 'sandbox'),
     });
 
     console.log('TellerClient initialized successfully.');

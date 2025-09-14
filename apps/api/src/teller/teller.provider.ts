@@ -1,8 +1,13 @@
 import { ConfigService } from '@nestjs/config';
-import { TellerClient } from '@maxint/teller';
+import { Axios } from 'axios';
 import * as fs from 'fs';
-import * as path from 'path';
+import * as https from 'https';
 import * as os from 'os';
+import * as path from 'path';
+
+// Manually import the modules from the library
+import TellerAccountModule from '@maxint/teller/dist/modules/account.js';
+import TellerTransactionModule from '@maxint/teller/dist/modules/transaction.js';
 
 // This function will be called on process exit to clean up temporary files.
 const cleanupTempFiles = (files: string[]) => {
@@ -28,23 +33,17 @@ export const TellerClientProvider = {
       throw new Error('Teller certificate or private key not found in environment variables. Please check your .env file.');
     }
 
-    // Using process.pid makes the filenames unique per process, avoiding conflicts.
     const certPath = path.join(os.tmpdir(), `teller_cert_${process.pid}.pem`);
     const privateKeyPath = path.join(os.tmpdir(), `teller_key_${process.pid}.pem`);
 
-    // The .env file might store newlines as the literal string "\\n". Replace them with actual newlines.
     const formattedCert = certContent.replace(/\\n/g, '\n');
     const formattedPrivateKey = privateKeyContent.replace(/\\n/g, '\n');
 
-    // Write the credentials to temporary files.
     fs.writeFileSync(certPath, formattedCert);
     fs.writeFileSync(privateKeyPath, formattedPrivateKey);
 
-    // Register a cleanup hook for when the Node.js process exits.
-    // This handles graceful shutdowns, Ctrl+C (SIGINT), and termination signals.
     const cleanup = () => cleanupTempFiles([certPath, privateKeyPath]);
     process.on('exit', cleanup);
-    // Ensure cleanup runs on termination signals
     process.on('SIGINT', () => process.exit());
     process.on('SIGTERM', () => process.exit());
     process.on('uncaughtException', (err) => {
@@ -52,16 +51,28 @@ export const TellerClientProvider = {
         process.exit(1);
     });
 
-    // Instantiate the TellerClient with the paths to the temporary files.
-    const tellerClient = new TellerClient({
-      certificatePath: certPath,
-      privateKeyPath: privateKeyPath,
-      environment: configService.get<string>('TELLER_ENV', 'sandbox'),
+    // Manually create the HTTPS agent, same as the library does.
+    const httpsAgent = new https.Agent({
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(privateKeyPath),
     });
 
-    console.log('TellerClient initialized successfully.');
+    // Manually create the Axios instance.
+    // We DO NOT set a default `auth` token here. It will be provided per-request.
+    const axios = new Axios({
+      baseURL: 'https://api.teller.io', // This is the correct URL for all environments
+      httpsAgent,
+      responseType: 'json',
+    });
 
-    return tellerClient;
+    console.log('Custom TellerClient initialized successfully.');
+
+    // Manually construct the object that will be injected.
+    // This bypasses the TellerClient class entirely.
+    return {
+      account: new TellerAccountModule(axios),
+      transactions: new TellerTransactionModule(axios),
+    };
   },
   inject: [ConfigService],
 };

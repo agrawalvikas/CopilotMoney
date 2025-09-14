@@ -8,6 +8,7 @@ const AddAccountButton = () => {
   const { getToken } = useAuth();
   const { open, ready } = useTellerConnect({
     applicationId: process.env.NEXT_PUBLIC_TELLER_APP_ID!,
+    environment: 'development',
     onSuccess: async (enrollment) => {
       const token = await getToken();
       if (!token) {

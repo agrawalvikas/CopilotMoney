@@ -14,14 +14,30 @@ export class TellerService {
   async syncData(accessToken: string, userId: string) {
     const accounts = await this.tellerClient.account.list({ accessToken });
 
+    // Check for Teller's specific error object format, which indicates a problem.
+    if (accounts && 'error' in accounts) {
+      console.error('Teller API returned an error:', (accounts as any).error);
+      console.error(
+        'This likely means the accessToken is for a different environment (e.g., sandbox vs development) than the backend is configured for.',
+      );
+      return {
+        status: 'error',
+        message: `Teller API Error: ${(accounts as any).error.message}`,
+      };
+    }
+
     // Gracefully handle cases where Teller API returns no accounts or a non-iterable response
     if (!accounts || typeof accounts[Symbol.iterator] !== 'function') {
-      console.log('No accounts returned from Teller or response is not iterable. Skipping sync.');
+      console.log(
+        'No accounts returned from Teller or response is not iterable. Skipping sync.',
+      );
       return { status: 'ok', message: 'No accounts found to sync.' };
     }
 
     for (const account of accounts) {
-      const balance = await this.tellerClient.account.balances(account.id, { accessToken });
+      const balance = await this.tellerClient.account.balances(account.id, {
+        accessToken,
+      });
 
       const savedAccount = await this.prisma.account.upsert({
         where: { tellerAccountId: account.id },
@@ -45,8 +61,13 @@ export class TellerService {
         { accessToken, limit: 100, cursor: '' },
       );
 
-      if (!transactions || typeof transactions[Symbol.iterator] !== 'function') {
-        console.log(`No transactions returned for account ${account.id} or response is not iterable. Continuing to next account.`);
+      if (
+        !transactions ||
+        typeof transactions[Symbol.iterator] !== 'function'
+      ) {
+        console.log(
+          `No transactions returned for account ${account.id} or response is not iterable. Continuing to next account.`,
+        );
         continue;
       }
 

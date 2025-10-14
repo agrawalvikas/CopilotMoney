@@ -1,5 +1,6 @@
 import { UserButton } from "@clerk/nextjs";
 import AddAccountButton from "@/components/add-account-button";
+import Link from "next/link";
 
 export default function DashboardPage() {
   return (
@@ -21,8 +22,14 @@ export default function DashboardPage() {
                 This page is protected and only accessible to authenticated
                 users.
               </p>
-              <div className="mt-6">
+              <div className="mt-6 flex gap-4 justify-center">
                 <AddAccountButton />
+                <Link
+                  href="/accounts"
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400"
+                >
+                  View My Accounts
+                </Link>
               </div>
             </div>
           </div>

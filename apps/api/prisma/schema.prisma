@@ -20,13 +20,14 @@ model User {
 
 // Represents a connection to a financial institution via Teller
 model Connection {
-  id              String   @id @default(cuid())
-  tellerId        String   @unique // The ID from Teller for this connection
+  id              String    @id @default(cuid())
+  tellerId        String    @unique // The ID from Teller for this connection
   institutionName String
-  accessToken     String // This will be the encrypted token
+  accessToken     String    // This will be the encrypted token
   userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts        Account[] // One connection can have multiple accounts
+  createdAt       DateTime  @default(now())
 }
 
 // Represents a connected financial account
@@ -34,11 +35,13 @@ model Account {
   id              String        @id @default(cuid())
   tellerAccountId String        @unique // The ID from Teller for this account
   name            String
-  mask            String // Last 4 digits, e.g., "4281"
-  type            String // e.g., "checking", "credit_card"
+  mask            String        // Last 4 digits, e.g., "4281"
+  type            String        // e.g., "checking", "credit_card"
   balance         Decimal
   currency        String        @default("USD")
   institutionName String
+  connectionId    String        // Foreign key to Connection
+  connection      Connection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   userId          String
   user            User          @relation(fields: [userId], references: [id])
   transactions    Transaction[]

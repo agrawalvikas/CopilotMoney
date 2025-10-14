@@ -48,6 +48,6 @@ export class TellerController {
       connection.accessToken,
     );
 
-    return this.tellerService.syncData(decryptedAccessToken, user.id);
+    return this.tellerService.syncData(decryptedAccessToken, user.id, connectionId);
   }
 }

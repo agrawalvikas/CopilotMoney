@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { CreateConnectionDto } from './dto/create-connection.dto';
 import type { ClerkClient } from '@clerk/backend';
+import { TellerService } from '../teller/teller.service';
 
 @Injectable()
 export class ConnectionsService {
@@ -10,6 +11,7 @@ export class ConnectionsService {
     private readonly prisma: PrismaService,
     private readonly encryptionService: EncryptionService,
     @Inject('ClerkClient') private readonly clerkClient: ClerkClient,
+    private readonly tellerService: TellerService,
   ) {}
 
   async create(createConnectionDto: CreateConnectionDto, clerkId: string) {
@@ -44,6 +46,15 @@ export class ConnectionsService {
         accessToken: encryptedAccessToken,
       },
     });
+
+    // 5. Immediately sync accounts and transactions for this connection
+    try {
+      await this.tellerService.syncData(accessToken, user.id, newConnection.id);
+    } catch (error) {
+      console.error('Failed to sync data after connection creation:', error);
+      // Don't fail the connection creation if sync fails
+      // User can manually trigger sync later
+    }
 
     // It's good practice not to return the token, even if it's encrypted.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

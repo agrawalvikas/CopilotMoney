@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # Turbo
 .turbo
+
+# Teller certificate files
+apps/api/*.pem

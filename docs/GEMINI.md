@@ -1,3 +1,4 @@
+
 # 📋 Project Vision & Agent Instructions
 
 ## 1. The Vision
@@ -47,3 +48,56 @@ Our mission is to build a secure, intuitive, and powerful personal finance platf
 1.  **Branching:** Create a new feature branch from `main` for every new task (e.g., `feature/add-transaction-modal`).
 2.  **Commits:** Write clear, concise commit messages following the Conventional Commits specification (e.g., `feat: add transaction delete endpoint`, `fix: correct category filter logic`).
 3.  **Pull Requests (PRs):** Once a feature is complete, open a PR against `main`. The PR description should explain what was done and why. All CI checks (linting, tests) must pass before a PR can be merged.
+
+---
+
+## 5. Client-Side Data Fetching (SWR + Clerk)
+
+To ensure authentication tokens are always fresh and to prevent expiration errors, all client-side data fetching for authenticated API endpoints **must** use the global `authedFetcher` with the `useSWR` hook. This pattern correctly handles Clerk's expiring tokens by fetching a new token on every request.
+
+### The Correct Pattern
+
+1.  **Import necessary hooks and functions:**
+    ```typescript
+    import useSWR from 'swr';
+    import { useAuth } from '@clerk/nextjs';
+    import { authedFetcher } from '@/lib/api';
+    ```
+
+2.  **Use the `useSWR` hook in your component:**
+    *   The SWR key should be an array containing the API endpoint and the `getToken` function from `useAuth`.
+    *   The fetcher function will receive the key and pass its elements to `authedFetcher`.
+
+    ```typescript
+    const MyComponent = () => {
+      const { getToken } = useAuth();
+
+      const { data, error, isLoading } = useSWR(
+        ['/api/v1/my-data', getToken], // Pass getToken to the fetcher
+        ([url, getTokenFn]) => authedFetcher(url, getTokenFn)
+      );
+
+      // ... render logic ...
+    };
+    ```
+
+### The `authedFetcher` Implementation
+
+This function lives in `apps/web/src/lib/api.ts`. It is pre-configured to use the `api` client with the correct base URL.
+
+```typescript
+export const authedFetcher = async (url: string, getToken: () => Promise<string | null>) => {
+  const token = await getToken();
+  if (!token) {
+    throw new Error('User not authenticated');
+  }
+  const response = await api.get(url, { headers: { Authorization: `Bearer ${token}` } });
+  return response.data;
+};
+```
+
+### Rules
+
+*   **DO** use this `authedFetcher` pattern for all authenticated client-side GET requests.
+*   **DO NOT** fetch the token once and store it in React state (`useState`). This will lead to expired tokens on SWR revalidations.
+*   **DO NOT** pass the token string directly to `useSWR`. Always pass the `getToken` function itself.

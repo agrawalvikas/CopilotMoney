@@ -15,6 +15,7 @@ interface TellerAccount {
 
 interface TellerBalance {
   available: string;
+  current: string; // Add current balance for credit cards
 }
 
 interface TellerTransaction {
@@ -48,21 +49,25 @@ export class TellerService {
       const balanceResponse = await this.tellerApi.get<TellerBalance>(`/accounts/${account.id}/balances`, { auth });
       const balance = balanceResponse.data;
 
+      // For credit cards, the 'current' balance is what's owed.
+      // For depository accounts, the 'available' balance is what can be spent.
+      const balanceToUse = account.type === 'credit' ? balance.current : balance.available;
+
       const savedAccount = await this.prisma.account.upsert({
         where: { tellerAccountId: account.id },
         create: {
           tellerAccountId: account.id,
           name: account.name,
           mask: account.last_four,
-          type: account.type === 'depository' ? 'checking' : 'credit_card',
-          balance: new Decimal(balance.available),
+          type: account.type,
+          balance: new Decimal(balanceToUse),
           currency: account.currency,
           institutionName: account.institution.name,
           userId,
           connectionId,
         },
         update: {
-          balance: new Decimal(balance.available),
+          balance: new Decimal(balanceToUse),
         },
       });
 

@@ -6,6 +6,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { AccountsModule } from './accounts/accounts.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { AccountsModule } from './accounts/accounts.module';
     EncryptionModule,
     ConnectionsModule,
     AccountsModule,
+    TransactionsModule,
+    CategoriesModule,
   ],
   controllers: [],
   providers: [],

@@ -18,8 +18,8 @@ export const TellerApiProvider = {
     }
 
     // Use stable paths within the project directory.
-    const certPath = path.join(process.cwd(), 'apps', 'api', 'teller.cert.pem');
-    const privateKeyPath = path.join(process.cwd(), 'apps', 'api', 'teller.key.pem');
+    const certPath = path.join(process.cwd(), 'teller.cert.pem');
+    const privateKeyPath = path.join(process.cwd(), 'teller.key.pem');
 
     const formattedCert = certContent.replace(/\\n/g, '\n');
     const formattedPrivateKey = privateKeyContent.replace(/\\n/g, '\n');

@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import type { AxiosInstance } from 'axios';
+import { TransactionMapperService } from '../transactions/transaction-mapper.service';
 
 // Define interfaces for the Teller API responses based on their documentation/structure
 interface TellerAccount {
@@ -32,6 +33,7 @@ export class TellerService {
     @Inject('TellerApi')
     private readonly tellerApi: AxiosInstance,
     private readonly prisma: PrismaService,
+    private readonly transactionMapper: TransactionMapperService,
   ) {}
 
   async syncData(accessToken: string, userId: string, connectionId: string) {
@@ -75,6 +77,13 @@ export class TellerService {
       const transactions = transactionsResponse.data;
 
       for (const transaction of transactions) {
+        // Determine the flow using the mapper service
+        const flow = this.transactionMapper.getFlow({
+          type: transaction.type,
+          description: transaction.description,
+          amount: parseFloat(transaction.amount),
+        });
+
         await this.prisma.transaction.upsert({
           where: { tellerTransactionId: transaction.id },
           create: {
@@ -83,11 +92,13 @@ export class TellerService {
             amount: new Decimal(transaction.amount),
             date: new Date(transaction.date),
             type: transaction.type,
+            flow: flow, // Set the new flow column
             accountId: savedAccount.id,
           },
           update: {
             amount: new Decimal(transaction.amount),
             description: transaction.description,
+            flow: flow, // Also update the flow on existing transactions
           },
         });
       }

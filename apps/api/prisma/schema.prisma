@@ -7,15 +7,23 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Added for standardized transaction flow
+enum TransactionFlow {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
 // User model managed by Clerk, but we have a reference
 model User {
-  id         String     @id @default(cuid())
-  clerkId    String     @unique // The ID from Clerk
-  email      String     @unique
-  accounts    Account[]
-  categories  Category[]
-  connections Connection[] // Add relation to Connection
-  createdAt   DateTime     @default(now())
+  id                  String               @id @default(cuid())
+  clerkId             String               @unique // The ID from Clerk
+  email               String               @unique
+  accounts            Account[]
+  categories          Category[]
+  connections         Connection[]
+  categorizationRules CategorizationRule[] // Add relation to rules
+  createdAt           DateTime             @default(now())
 }
 
 // Represents a connection to a financial institution via Teller
@@ -49,29 +57,43 @@ model Account {
 
 // Represents a single financial transaction
 model Transaction {
-  id                  String    @id @default(cuid())
-  tellerTransactionId String    @unique // The ID from Teller for this transaction
-  description         String // The merchant name, e.g., "Starbucks"
+  id                  String          @id @default(cuid())
+  tellerTransactionId String          @unique // The ID from Teller for this transaction
+  description         String
   amount              Decimal
   date                DateTime
-  currency            String    @default("USD")
-  type                String // "debit" or "credit"
-  isManual            Boolean   @default(false)
+  currency            String          @default("USD")
+  type                String          // Raw type from Teller, e.g., 'debit', 'card_payment'
+  flow                TransactionFlow // Standardized flow
+  isManual            Boolean         @default(false)
   notes               String?
   accountId           String
-  account             Account   @relation(fields: [accountId], references: [id])
+  account             Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   categoryId          String?
-  category            Category? @relation(fields: [categoryId], references: [id])
+  category            Category?       @relation(fields: [categoryId], references: [id])
 }
 
 // Transaction categories
 model Category {
-  id           String        @id @default(cuid())
-  name         String
+  id                  String               @id @default(cuid())
+  name                String
   // If userId is null, it's a default system category
-  userId       String?
-  user         User?         @relation(fields: [userId], references: [id])
-  transactions Transaction[]
+  userId              String?
+  user                User?                @relation(fields: [userId], references: [id])
+  transactions        Transaction[]
+  categorizationRules CategorizationRule[] // Add relation to rules
 
   @@unique([name, userId]) // A user cannot have two categories with the same name
+}
+
+// User-defined rules for auto-categorization
+model CategorizationRule {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  descriptionContains String
+  categoryId          String
+  category            Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, descriptionContains])
 }

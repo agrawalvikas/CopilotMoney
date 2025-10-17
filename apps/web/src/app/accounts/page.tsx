@@ -66,6 +66,9 @@ export default async function AccountsPage() {
                 <Link href="/transactions" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white">
                   Transactions
                 </Link>
+                <Link href="/settings/rules" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white">
+                  Settings
+                </Link>
               </nav>
             </div>
             <div className="flex items-center">

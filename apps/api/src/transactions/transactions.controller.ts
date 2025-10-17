@@ -20,6 +20,11 @@ export class TransactionsController {
     return this.transactionsService.create(auth.userId, body);
   }
 
+  @Post('backfill-rules')
+  backfillRules(@AuthUser() auth: { userId: string }) {
+    return this.transactionsService.backfillRules(auth.userId);
+  }
+
   @Patch(':id')
   update(
     @AuthUser() auth: { userId: string },

@@ -1,16 +1,48 @@
-
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, Transaction } from '@prisma/client';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { randomUUID } from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
+import { RulesEngineService } from './rules-engine.service';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rulesEngine: RulesEngineService,
+  ) {}
+
+  async backfillRules(clerkId: string) {
+    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    if (!user) throw new NotFoundException('User not found.');
+
+    const allTransactions = await this.prisma.transaction.findMany({
+      where: { account: { userId: user.id } },
+    });
+
+    const updatedTransactions = await this.rulesEngine.applyRules(user.id, allTransactions);
+
+    let updatedCount = 0;
+
+    const updatePromises = updatedTransactions.map((transaction, index) => {
+      // Check if the categoryId was changed by the rules engine
+      if (transaction.categoryId !== allTransactions[index].categoryId) {
+        updatedCount++;
+        return this.prisma.transaction.update({
+          where: { id: transaction.id },
+          data: { categoryId: transaction.categoryId },
+        });
+      }
+      return null;
+    }).filter(promise => promise !== null);
+
+    await Promise.all(updatePromises);
+
+    return { message: `Backfill complete. ${updatedCount} transactions updated.` };
+  }
 
   async create(clerkId: string, dto: CreateTransactionDto) {
     const user = await this.prisma.user.findUnique({
@@ -33,13 +65,15 @@ export class TransactionsService {
       throw new ForbiddenException('Account not found or you do not have permission to add a transaction to it.');
     }
 
+    // Note: The 'flow' will be set during the sync process. Manual transactions don't have a raw 'type' to map from.
+    // We will default it to EXPENSE, as that is the most common manual entry.
     const newTransaction = await this.prisma.transaction.create({
       data: {
         ...dto,
         amount: new Decimal(dto.amount),
         date: new Date(dto.date),
         isManual: true,
-        // Generate a unique ID for manual transactions as they don't come from Teller
+        flow: 'EXPENSE', // Default manual transactions to expense
         tellerTransactionId: `manual_${randomUUID()}`,
         accountId: dto.accountId,
       },
@@ -57,8 +91,6 @@ export class TransactionsService {
       throw new NotFoundException('User not found.');
     }
 
-    // Use updateMany to ensure we can apply a compound where clause for security.
-    // This ensures a user can only update a transaction that they own.
     const result = await this.prisma.transaction.updateMany({
       where: {
         id: transactionId,
@@ -69,12 +101,10 @@ export class TransactionsService {
       data: dto,
     });
 
-    // If updateMany affects 0 rows, it means the transaction wasn't found for that user.
     if (result.count === 0) {
       throw new NotFoundException('Transaction not found or you do not have permission to update it.');
     }
 
-    // Return the updated transaction
     return this.prisma.transaction.findUnique({
       where: { id: transactionId },
     });

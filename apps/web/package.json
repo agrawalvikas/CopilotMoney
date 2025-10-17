@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.3",
+    "@types/recharts": "^1.8.29",
     "axios": "^1.12.2",
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "recharts": "^3.2.1",
     "swr": "^2.3.4",
     "teller-connect-react": "^0.2.3"
   },

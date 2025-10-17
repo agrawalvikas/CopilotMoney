@@ -1,9 +1,9 @@
 
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import TransactionsView from "@/components/transactions/TransactionsView";
+import { UserButton } from "@clerk/nextjs";
+import RulesManager from "@/components/settings/RulesManager";
 
-export default function TransactionsPage() {
+export default function RulesPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
       {/* Header */}
@@ -19,10 +19,11 @@ export default function TransactionsPage() {
                 <Link href="/accounts" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white">
                   Accounts
                 </Link>
-                <Link href="/transactions" className="px-3 py-2 rounded-md text-sm font-medium bg-gray-800 text-white">
+                <Link href="/transactions" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white">
                   Transactions
                 </Link>
-                <Link href="/settings/rules" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white">
+                {/* This is a new top-level nav item */}
+                <Link href="/settings/rules" className="px-3 py-2 rounded-md text-sm font-medium bg-gray-800 text-white">
                   Settings
                 </Link>
               </nav>
@@ -39,11 +40,11 @@ export default function TransactionsPage() {
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {/* Page Header */}
           <div className="px-4 sm:px-0 flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold">Your Transactions</h2>
+            <h2 className="text-3xl font-bold">Categorization Rules</h2>
           </div>
 
           <div className="px-4 sm:px-0">
-            <TransactionsView />
+            <RulesManager />
           </div>
         </div>
       </main>

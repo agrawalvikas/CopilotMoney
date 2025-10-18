@@ -84,6 +84,7 @@ export default async function AccountsPage() {
           {/* Page Header */}
           <div className="px-4 sm:px-0 flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold">Your Accounts</h2>
+            <AddAccountButton />
           </div>
 
           <div className="px-4 sm:px-0">
@@ -104,6 +105,9 @@ export default async function AccountsPage() {
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
                         Balance
                       </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Available
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-gray-800/50 divide-y divide-gray-700">
@@ -123,6 +127,12 @@ export default async function AccountsPage() {
                             style: "currency",
                             currency: account.currency,
                           }).format(account.balance)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-gray-400">
+                          {account.availableBalance != null ? new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: account.currency,
+                          }).format(account.availableBalance) : 'N/A'}
                         </td>
                       </tr>
                     ))}

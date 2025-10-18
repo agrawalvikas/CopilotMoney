@@ -10,6 +10,10 @@ import { api, authedFetcher } from '@/lib/api';
 interface Transaction {
   id: string;
   description: string;
+  amount: string; // Amount is a string
+  date: string;
+  flow: string; // Not strictly needed here, but good for consistency
+  account: { name: string };
   categoryId: string | null;
   notes: string | null;
 }

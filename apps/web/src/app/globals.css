@@ -25,6 +25,31 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Custom styles for react-day-picker */
+.rdp {
+  --rdp-background-color: transparent !important;
+  --rdp-cell-size: 35px !important;
+  --rdp-caption-font-size: 1rem !important;
+  color: white !important;
+}
+.rdp-head_cell {
+  color: #9ca3af !important; /* gray-400 */
+}
+.rdp-day_selected,
+.rdp-day_range_start,
+.rdp-day_range_end {
+  background-color: #2563eb !important; /* blue-600 */
+  color: #ffffff !important;
+}
+.rdp-day_range_middle {
+  background-color: rgba(37, 99, 235, 0.3) !important; /* blue-600 with opacity */
+  color: #dbeafe !important; /* blue-100 */
+  border-radius: 0 !important;
+}
+.rdp-day_outside {
+  color: #4b5563 !important; /* gray-600 */
+}
+
 /* Add custom styles for background glow effects */
 .glow-1::before {
   content: '';

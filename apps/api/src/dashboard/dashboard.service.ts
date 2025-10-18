@@ -2,12 +2,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { QuerySummaryDto } from './dto/query-summary.dto';
 
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSummary(clerkId: string) {
+  async getSummary(clerkId: string, queryDto: QuerySummaryDto) {
+    const { startDate: queryStartDate, endDate: queryEndDate } = queryDto;
+
     const user = await this.prisma.user.findUnique({
       where: { clerkId },
     });
@@ -16,10 +19,10 @@ export class DashboardService {
       throw new NotFoundException('User not found.');
     }
 
-    // Define date range for the current month
+    // Define date range
     const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startDate = queryStartDate ? new Date(queryStartDate) : new Date(now.getFullYear(), now.getMonth(), 1);
+    const endDate = queryEndDate ? new Date(queryEndDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
     const baseWhere: Prisma.TransactionWhereInput = {
       account: {
@@ -106,5 +109,21 @@ export class DashboardService {
       netIncome: totalIncome - totalExpenses,
       spendingByCategory: formattedSpendingByCategory,
     };
+  }
+
+  async getTransactionYears(clerkId: string): Promise<number[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { clerkId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const yearsResult = await this.prisma.$queryRaw<Array<{ year: number }>>(
+      Prisma.sql`SELECT DISTINCT EXTRACT(YEAR FROM "date")::integer AS year FROM "Transaction" WHERE "accountId" IN (SELECT id FROM "Account" WHERE "userId" = ${user.id}) ORDER BY year DESC`
+    );
+
+    return yearsResult.map(item => item.year);
   }
 }

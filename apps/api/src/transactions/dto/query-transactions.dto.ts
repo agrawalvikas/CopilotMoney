@@ -1,5 +1,5 @@
 
-import { IsOptional, IsString, IsDateString, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsInt, Min, Max, IsIn, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryTransactionsDto {
@@ -8,8 +8,29 @@ export class QueryTransactionsDto {
   accountId?: string;
 
   @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsIn(['eq', 'gt', 'lt', 'gte', 'lte'])
+  amountOperator?: 'eq' | 'gt' | 'lt' | 'gte' | 'lte';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  amount?: number;
+
+  @IsOptional()
   @IsDateString()
   startDate?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
+  flow?: 'INCOME' | 'EXPENSE' | 'TRANSFER';
 
   @IsOptional()
   @IsDateString()

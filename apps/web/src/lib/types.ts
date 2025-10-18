@@ -5,6 +5,13 @@ export type Account = {
   mask: string;
   type: string;
   balance: number;
+  availableBalance?: number | null;
   currency: string;
   institutionName: string;
 };
+
+export enum TransactionFlow {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
+  TRANSFER = 'TRANSFER',
+}

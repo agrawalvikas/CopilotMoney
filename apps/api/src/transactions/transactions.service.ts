@@ -111,7 +111,7 @@ export class TransactionsService {
   }
 
   async findAll(clerkId: string, queryDto: QueryTransactionsDto) {
-    const { accountId, startDate, endDate, page, limit } = queryDto;
+    const { accountId, startDate, endDate, page, limit, categoryId, amount, amountOperator, description, flow } = queryDto;
 
     const user = await this.prisma.user.findUnique({
       where: { clerkId },
@@ -131,6 +131,18 @@ export class TransactionsService {
       where.accountId = accountId;
     }
 
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (description) {
+      where.description = { contains: description, mode: 'insensitive' };
+    }
+
+    if (flow) {
+      where.flow = flow;
+    }
+
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
@@ -141,10 +153,17 @@ export class TransactionsService {
       }
     }
 
-    const transactions = await this.prisma.transaction.findMany({
+    if (amountOperator && amount !== undefined) {
+      const operator = amountOperator === 'eq' ? 'equals' : amountOperator;
+      where.amount = { [operator]: amount };
+    }
+
+    // Get transactions with pagination
+    const transactionsPromise = this.prisma.transaction.findMany({
       where,
       include: {
         category: true,
+        account: true,
       },
       skip: (page - 1) * limit,
       take: limit,
@@ -153,7 +172,13 @@ export class TransactionsService {
       },
     });
 
-    const totalTransactions = await this.prisma.transaction.count({ where });
+    // Get total count for pagination
+    const totalTransactionsPromise = this.prisma.transaction.count({ where });
+
+    const [transactions, totalTransactions] = await Promise.all([
+      transactionsPromise,
+      totalTransactionsPromise,
+    ]);
 
     return {
       data: transactions,

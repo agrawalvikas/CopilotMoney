@@ -16,7 +16,8 @@ interface TellerAccount {
 
 interface TellerBalance {
   available: string;
-  current: string; // Add current balance for credit cards
+  current: string; // This was an assumption, ledger is the correct field
+  ledger: string; 
 }
 
 interface TellerTransaction {
@@ -48,12 +49,13 @@ export class TellerService {
     }
 
     for (const account of accounts) {
+      console.log('Processing account:', account);
+
       const balanceResponse = await this.tellerApi.get<TellerBalance>(`/accounts/${account.id}/balances`, { auth });
+
       const balance = balanceResponse.data;
 
-      // For credit cards, the 'current' balance is what's owed.
-      // For depository accounts, the 'available' balance is what can be spent.
-      const balanceToUse = account.type === 'credit' ? balance.current : balance.available;
+      console.log(`Received balance response for account ${account.id}:`, balance);
 
       const savedAccount = await this.prisma.account.upsert({
         where: { tellerAccountId: account.id },
@@ -62,14 +64,16 @@ export class TellerService {
           name: account.name,
           mask: account.last_four,
           type: account.type,
-          balance: new Decimal(balanceToUse),
+          balance: new Decimal(balance.ledger ?? '0'),
+          availableBalance: new Decimal(balance.available ?? '0'),
           currency: account.currency,
           institutionName: account.institution.name,
           userId,
           connectionId,
         },
         update: {
-          balance: new Decimal(balanceToUse),
+          balance: new Decimal(balance.ledger ?? '0'),
+          availableBalance: new Decimal(balance.available ?? '0'),
         },
       });
 
@@ -89,14 +93,14 @@ export class TellerService {
           create: {
             tellerTransactionId: transaction.id,
             description: transaction.description,
-            amount: new Decimal(transaction.amount),
+            amount: new Decimal(Math.abs(parseFloat(transaction.amount))),
             date: new Date(transaction.date),
             type: transaction.type,
             flow: flow, // Set the new flow column
             accountId: savedAccount.id,
           },
           update: {
-            amount: new Decimal(transaction.amount),
+            amount: new Decimal(Math.abs(parseFloat(transaction.amount))),
             description: transaction.description,
             flow: flow, // Also update the flow on existing transactions
           },

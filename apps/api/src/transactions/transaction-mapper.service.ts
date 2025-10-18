@@ -32,7 +32,7 @@ const rules: FlowRule[] = [
 
   // Rule for income
   {
-    tellerTypes: ['credit', 'deposit'],
+    tellerTypes: ['credit', 'deposit', 'adjustment'],
     flow: TransactionFlow.INCOME,
   },
   {
@@ -42,7 +42,7 @@ const rules: FlowRule[] = [
 
   // Rule for expenses
   {
-    tellerTypes: ['debit', 'card_payment'],
+    tellerTypes: ['debit', 'card_payment','fees'],
     flow: TransactionFlow.EXPENSE,
   },
 ];

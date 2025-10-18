@@ -46,6 +46,7 @@ model Account {
   mask            String        // Last 4 digits, e.g., "4281"
   type            String        // e.g., "checking", "credit_card"
   balance         Decimal
+  availableBalance Decimal?      // The available balance or credit limit
   currency        String        @default("USD")
   institutionName String
   connectionId    String        // Foreign key to Connection

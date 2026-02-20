@@ -24,13 +24,9 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({ currentPage, to
     }
   };
 
-  if (totalPages <= 1) {
-    return null; // Don't render controls if there's only one page
-  }
-
   return (
     <div className="flex items-center justify-between mt-6">
-      {/* Per Page Dropdown */}
+      {/* Per Page Dropdown — always visible so user can always change it */}
       <div className="flex items-center gap-2">
         <label htmlFor="limit-select" className="text-sm text-gray-400">Per Page:</label>
         <select
@@ -46,28 +42,30 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({ currentPage, to
         </select>
       </div>
 
-      {/* Page Info and Nav */}
-      <div className="flex items-center gap-4">
-        <p className="text-sm text-gray-400">
-          Page <span className="font-medium text-white">{currentPage}</span> of <span className="font-medium text-white">{totalPages}</span>
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrevious}
-            disabled={currentPage <= 1}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700 disabled:bg-gray-800/50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={currentPage >= totalPages}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700 disabled:bg-gray-800/50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
+      {/* Page Info and Nav — only shown when there is more than one page */}
+      {totalPages > 1 && (
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-gray-400">
+            Page <span className="font-medium text-white">{currentPage}</span> of <span className="font-medium text-white">{totalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrevious}
+              disabled={currentPage <= 1}
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700 disabled:bg-gray-800/50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={currentPage >= totalPages}
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-700 disabled:bg-gray-800/50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

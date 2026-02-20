@@ -1,5 +1,6 @@
 
-import { IsString, IsNotEmpty, IsNumber, IsPositive, IsDateString, IsIn, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsPositive, IsDateString, IsIn, IsOptional } from 'class-validator';
+import { TransactionFlow } from '@prisma/client';
 
 export class CreateTransactionDto {
   @IsString()
@@ -16,6 +17,19 @@ export class CreateTransactionDto {
   @IsIn(['debit', 'credit'])
   type: 'debit' | 'credit';
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   accountId: string;
+
+  @IsOptional()
+  @IsIn([TransactionFlow.INCOME, TransactionFlow.EXPENSE, TransactionFlow.TRANSFER])
+  flow?: TransactionFlow;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

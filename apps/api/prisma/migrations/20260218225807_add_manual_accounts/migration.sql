@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "public"."Account" ADD COLUMN     "isManual" BOOLEAN NOT NULL DEFAULT false,
+ALTER COLUMN "tellerAccountId" DROP NOT NULL,
+ALTER COLUMN "mask" DROP NOT NULL,
+ALTER COLUMN "balance" DROP NOT NULL,
+ALTER COLUMN "connectionId" DROP NOT NULL;

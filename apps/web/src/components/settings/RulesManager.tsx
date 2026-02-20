@@ -51,8 +51,7 @@ const RulesManager = () => {
       mutate(['/api/v1/rules', getToken]); // Re-fetch rules
       setDescription('');
       setCategoryId('');
-    } catch (error) {
-      console.error("Failed to create rule", error);
+    } catch {
       alert("Failed to create rule.");
     }
     setIsCreating(false);
@@ -64,8 +63,7 @@ const RulesManager = () => {
       const token = await getToken();
       await api.delete(`/api/v1/rules/${ruleId}`, { headers: { Authorization: `Bearer ${token}` } });
       mutate(['/api/v1/rules', getToken]); // Re-fetch rules
-    } catch (error) {
-      console.error("Failed to delete rule", error);
+    } catch {
       alert("Failed to delete rule.");
     }
   };
@@ -77,8 +75,7 @@ const RulesManager = () => {
       const token = await getToken();
       const response = await api.post('/api/v1/transactions/backfill-rules', {}, { headers: { Authorization: `Bearer ${token}` } });
       alert(response.data.message);
-    } catch (error) {
-      console.error("Failed to backfill rules", error);
+    } catch {
       alert("Failed to apply rules.");
     }
     setIsBackfilling(false);

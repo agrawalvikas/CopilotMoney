@@ -1,4 +1,5 @@
 
+import { Suspense } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import TransactionsView from "@/components/transactions/TransactionsView";
@@ -43,7 +44,9 @@ export default function TransactionsPage() {
           </div>
 
           <div className="px-4 sm:px-0">
-            <TransactionsView />
+            <Suspense fallback={<div className="p-4 text-gray-400">Loading...</div>}>
+              <TransactionsView />
+            </Suspense>
           </div>
         </div>
       </main>

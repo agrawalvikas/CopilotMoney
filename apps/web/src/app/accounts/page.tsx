@@ -1,20 +1,18 @@
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import axios from 'axios';
+import { api } from '@/lib/api';
 import type { Account } from '@/lib/types';
 import AddAccountButton from "@/components/add-account-button";
+import DeleteAccountButton from "@/components/accounts/DeleteAccountButton";
 
 async function getAccounts(userId: string, token: string): Promise<Account[]> {
   try {
-    const response = await axios.get("http://127.0.0.1:3001/api/v1/accounts", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await api.get("/api/v1/accounts", {
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
-  } catch (error) {
-    console.error("Failed to fetch accounts:", error);
+  } catch {
     return [];
   }
 }
@@ -108,6 +106,9 @@ export default async function AccountsPage() {
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
                         Available
                       </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-gray-800/50 divide-y divide-gray-700">
@@ -117,22 +118,29 @@ export default async function AccountsPage() {
                           {account.institutionName}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                          {account.name} ({account.mask})
+                          {account.name}{account.mask ? ` (${account.mask})` : ''}
+                          {account.isManual && (
+                            <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-900 text-blue-300 rounded">Manual</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 capitalize">
                           {account.type}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-gray-200">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: account.currency,
-                          }).format(account.balance)}
+                          {account.balance != null
+                            ? new Intl.NumberFormat("en-US", { style: "currency", currency: account.currency }).format(account.balance)
+                            : <span className="text-gray-600">—</span>}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-gray-400">
-                          {account.availableBalance != null ? new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: account.currency,
-                          }).format(account.availableBalance) : 'N/A'}
+                          {account.availableBalance != null
+                            ? new Intl.NumberFormat("en-US", { style: "currency", currency: account.currency }).format(account.availableBalance)
+                            : <span className="text-gray-600">—</span>}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <DeleteAccountButton
+                            accountId={account.id}
+                            accountName={`${account.name} (${account.institutionName})`}
+                          />
                         </td>
                       </tr>
                     ))}

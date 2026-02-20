@@ -1,5 +1,5 @@
 
-import { Controller, Get, Query, UseGuards, ValidationPipe, Patch, Param, Body, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, ValidationPipe, Patch, Delete, Param, Body, ParseUUIDPipe, Post } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -23,6 +23,19 @@ export class TransactionsController {
   @Post('backfill-rules')
   backfillRules(@AuthUser() auth: { userId: string }) {
     return this.transactionsService.backfillRules(auth.userId);
+  }
+
+  @Post('recategorize-all')
+  recategorizeAll(@AuthUser() auth: { userId: string }) {
+    return this.transactionsService.recategorizeAll(auth.userId);
+  }
+
+  @Delete(':id')
+  delete(
+    @AuthUser() auth: { userId: string },
+    @Param('id') id: string,
+  ) {
+    return this.transactionsService.delete(auth.userId, id);
   }
 
   @Patch(':id')

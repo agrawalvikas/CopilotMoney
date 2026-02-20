@@ -10,6 +10,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { CategoriesModule } from './categories/categories.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CategorizationRulesModule } from './categorization-rules/categorization-rules.module';
+import { PlaidModule } from './plaid/plaid.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CategorizationRulesModule } from './categorization-rules/categorization
     }),
     AuthModule,
     TellerModule,
+    PlaidModule,
     PrismaModule,
     EncryptionModule,
     ConnectionsModule,

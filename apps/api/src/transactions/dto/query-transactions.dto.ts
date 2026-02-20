@@ -12,6 +12,10 @@ export class QueryTransactionsDto {
   categoryId?: string;
 
   @IsOptional()
+  @IsString()
+  subCategoryId?: string;
+
+  @IsOptional()
   @IsIn(['eq', 'gt', 'lt', 'gte', 'lte'])
   amountOperator?: 'eq' | 'gt' | 'lt' | 'gte' | 'lte';
 
@@ -29,8 +33,8 @@ export class QueryTransactionsDto {
   description?: string;
 
   @IsOptional()
-  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
-  flow?: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER', 'UNRECOGNIZED'])
+  flow?: 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'UNRECOGNIZED';
 
   @IsOptional()
   @IsDateString()

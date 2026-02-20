@@ -1,5 +1,6 @@
 
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import * as https from 'node:https';
 import * as fs from 'node:fs/promises';
@@ -35,7 +36,7 @@ export const TellerApiProvider = {
 
     const baseURL = tellerEnv === 'sandbox' ? 'https://api.sandbox.teller.io' : 'https://api.teller.io';
 
-    console.log(`Initializing Teller API client for environment: ${tellerEnv} (URL: ${baseURL})`);
+    new Logger('TellerApiProvider').log(`Initializing Teller API client for environment: ${tellerEnv} (URL: ${baseURL})`);
 
     const tellerApi = axios.create({
       baseURL,

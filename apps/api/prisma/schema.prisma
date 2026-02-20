@@ -7,94 +7,175 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Added for standardized transaction flow
+// ---------------------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------------------
+
+// Every transaction is tagged with one of four flows.
+// TRANSFER is excluded from income/expense totals on the dashboard so that
+// moving money between accounts (e.g. paying a credit card) doesn't inflate
+// both sides of the ledger.
+// UNRECOGNIZED is a safety net for transactions whose sign/type we couldn't
+// determine; users can manually reclassify them.
 enum TransactionFlow {
   INCOME
   EXPENSE
   TRANSFER
+  UNRECOGNIZED
 }
 
-// User model managed by Clerk, but we have a reference
+// The two supported bank-connection providers.
+// Each has its own sync strategy:
+//   Teller — access-token + REST, re-fetches all transactions on every sync
+//   Plaid  — cursor-based incremental sync via transactions/sync API
+enum ConnectionProvider {
+  TELLER
+  PLAID
+}
+
+// ---------------------------------------------------------------------------
+// MODELS
+// ---------------------------------------------------------------------------
+
+// Mirrors the Clerk user record.  We store a local copy so that all relations
+// (accounts, rules, categories) can reference an internal UUID rather than
+// carrying the Clerk string ID through every table.
 model User {
   id                  String               @id @default(cuid())
-  clerkId             String               @unique // The ID from Clerk
+  clerkId             String               @unique // Clerk's user ID — used as the auth principal in every request
   email               String               @unique
   accounts            Account[]
   categories          Category[]
+  subCategories       SubCategory[]
   connections         Connection[]
-  categorizationRules CategorizationRule[] // Add relation to rules
+  categorizationRules CategorizationRule[]
   createdAt           DateTime             @default(now())
 }
 
-// Represents a connection to a financial institution via Teller
+// A Connection represents a live link to a financial institution via Teller
+// or Plaid.  One connection can expose multiple Accounts (e.g. a Chase
+// connection might surface both a checking and a savings account).
+//
+// The accessToken is AES-256-GCM encrypted at rest (see EncryptionService).
+// plaidCursor tracks the position in Plaid's cursor-based transaction stream
+// so incremental syncs only fetch new/modified transactions instead of everything.
 model Connection {
-  id              String    @id @default(cuid())
-  tellerId        String    @unique // The ID from Teller for this connection
+  id              String             @id @default(cuid())
+  provider        ConnectionProvider @default(TELLER)
+  tellerId        String?            @unique // Teller enrollment ID; null for Plaid connections
+  plaidItemId     String?            @unique // Plaid item_id; null for Teller connections
+  plaidCursor     String?            // Advances with each Plaid sync; null means "start from the beginning"
   institutionName String
-  accessToken     String    // This will be the encrypted token
+  accessToken     String             // Encrypted — never return this field to the client
   userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accounts        Account[] // One connection can have multiple accounts
-  createdAt       DateTime  @default(now())
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts        Account[]
+  createdAt       DateTime           @default(now())
 }
 
-// Represents a connected financial account
+// A single financial account (checking, savings, credit card, or manual cash).
+// Manual accounts have no connectionId and no live balance; they only hold
+// manually entered transactions.
+//
+// Both tellerAccountId and plaidAccountId are optional because:
+//   - Teller accounts set tellerAccountId, leave plaidAccountId null
+//   - Plaid accounts set plaidAccountId, leave tellerAccountId null
+//   - Manual accounts leave both null (a generated UUID is used as a placeholder)
 model Account {
-  id              String        @id @default(cuid())
-  tellerAccountId String        @unique // The ID from Teller for this account
-  name            String
-  mask            String        // Last 4 digits, e.g., "4281"
-  type            String        // e.g., "checking", "credit_card"
-  balance         Decimal
-  availableBalance Decimal?      // The available balance or credit limit
-  currency        String        @default("USD")
-  institutionName String
-  connectionId    String        // Foreign key to Connection
-  connection      Connection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
-  transactions    Transaction[]
+  id               String        @id @default(cuid())
+  tellerAccountId  String?       @unique // Teller's account ID; used as the upsert key during Teller sync
+  plaidAccountId   String?       @unique // Plaid's account_id; used as the upsert key during Plaid sync
+  name             String
+  mask             String?       // Last 4 digits of the account number; null for manual accounts
+  type             String        // Normalised: "checking" | "savings" | "credit" | "cash" | "other"
+  balance          Decimal?      // Current/ledger balance; null for manual accounts (no live data)
+  availableBalance Decimal?      // Available credit or funds; meaning is provider-specific
+  currency         String        @default("USD")
+  institutionName  String
+  isManual         Boolean       @default(false)
+  connectionId     String?       // Null for manual accounts
+  connection       Connection?   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User          @relation(fields: [userId], references: [id])
+  transactions     Transaction[]
 }
 
-// Represents a single financial transaction
+// A single financial transaction.  Amounts are ALWAYS stored as positive
+// Decimal values — direction is captured by the `flow` field, not the sign.
+//
+// Manual transactions use a generated "manual_<uuid>" as their
+// tellerTransactionId to satisfy the unique constraint without a real ID.
+// isHidden transactions are excluded from dashboard totals but still visible
+// in the transaction list (useful for hiding noise like internal transfers).
 model Transaction {
-  id                  String          @id @default(cuid())
-  tellerTransactionId String          @unique // The ID from Teller for this transaction
-  description         String
-  amount              Decimal
-  date                DateTime
-  currency            String          @default("USD")
-  type                String          // Raw type from Teller, e.g., 'debit', 'card_payment'
-  flow                TransactionFlow // Standardized flow
-  isManual            Boolean         @default(false)
-  notes               String?
-  accountId           String
-  account             Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  categoryId          String?
-  category            Category?       @relation(fields: [categoryId], references: [id])
+  id                   String          @id @default(cuid())
+  tellerTransactionId  String?         @unique // Teller's ID; used as the upsert key for Teller syncs
+  plaidTransactionId   String?         @unique // Plaid's transaction_id; upsert key for Plaid syncs
+  description          String
+  amount               Decimal         // Always positive; use `flow` to determine INCOME vs EXPENSE
+  date                 DateTime
+  currency             String          @default("USD")
+  type                 String          // Raw provider type, e.g. "debit", "card_payment" — informational only
+  flow                 TransactionFlow // Standardised direction determined at sync time
+  isManual             Boolean         @default(false)
+  isHidden             Boolean         @default(false) // Hidden = excluded from totals but not deleted
+  notes                String?
+  accountId            String
+  account              Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId           String?
+  category             Category?       @relation(fields: [categoryId], references: [id])
+  subCategoryId        String?
+  subCategory          SubCategory?    @relation(fields: [subCategoryId], references: [id])
+
+  // Indexes for the most frequent query patterns
+  @@index([date])          // Date-range filters
+  @@index([accountId])     // Per-account transaction lists
+  @@index([categoryId])    // Category groupBy queries in the dashboard
+  @@index([subCategoryId]) // Sub-category filtering
 }
 
-// Transaction categories
+// Categories for organising expenses and income.
+// System categories (userId = null) are seeded once in prisma/seed.ts and
+// are visible to all users.  Users can also create their own custom categories.
+// The @@unique([name, userId]) constraint allows "Groceries" to exist as
+// both a system category (userId=null) and a user-specific one without collision.
 model Category {
   id                  String               @id @default(cuid())
   name                String
-  // If userId is null, it's a default system category
-  userId              String?
+  userId              String?              // Null = system/default category shared across all users
   user                User?                @relation(fields: [userId], references: [id])
   transactions        Transaction[]
-  categorizationRules CategorizationRule[] // Add relation to rules
+  subCategories       SubCategory[]
+  categorizationRules CategorizationRule[]
 
-  @@unique([name, userId]) // A user cannot have two categories with the same name
+  @@unique([name, userId])
 }
 
-// User-defined rules for auto-categorization
+// Sub-categories always belong to both a Category and a User.
+// There are no system sub-categories — they are always user-created.
+model SubCategory {
+  id           String        @id @default(cuid())
+  name         String
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([name, categoryId, userId])
+}
+
+// User-defined auto-categorization rules applied during sync and backfill.
+// When a new transaction arrives, its description is checked against these
+// rules before falling back to the default keyword categorizer.
+// First match wins; order is not guaranteed so rules should not overlap.
 model CategorizationRule {
   id                  String   @id @default(cuid())
   userId              String
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  descriptionContains String
+  descriptionContains String   // Case-insensitive substring matched against transaction.description
   categoryId          String
   category            Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, descriptionContains])
+  @@unique([userId, descriptionContains]) // Prevents duplicate rules for the same keyword
 }

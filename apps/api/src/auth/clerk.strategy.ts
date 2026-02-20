@@ -1,4 +1,4 @@
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
@@ -7,6 +7,8 @@ import { verifyToken, type ClerkClient, type User } from '@clerk/backend';
 
 @Injectable()
 export class ClerkStrategy extends PassportStrategy(Strategy, 'clerk') {
+  private readonly logger = new Logger(ClerkStrategy.name);
+
   constructor(
     @Inject('ClerkClient')
     private readonly clerkClient: ClerkClient,
@@ -30,7 +32,7 @@ export class ClerkStrategy extends PassportStrategy(Strategy, 'clerk') {
       const user = await this.clerkClient.users.getUser(claims.sub);
       return user;
     } catch (error) {
-      console.error(error);
+      this.logger.error('Token validation failed', error);
       throw new UnauthorizedException('Invalid token');
     }
   }

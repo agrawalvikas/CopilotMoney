@@ -3,13 +3,21 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const defaultCategories = [
-  'Food',
-  'House',
-  'Car',
-  'Travel',
+  'Paychecks',
+  'Refunds',
+  'Fees',
+  'Shopping',
+  'Rent',
+  'Auto & Transport',
   'Utilities',
-  'Subscriptions',
-  'Misc',
+  'Drinks & Dining',
+  'Groceries',
+  'Personal Care',
+  'Healthcare',
+  'Entertainment',
+  'Taxes',
+  'Travel & Vacation',
+  'Other',
 ];
 
 async function main() {

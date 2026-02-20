@@ -51,8 +51,9 @@ const DatePresetPicker: React.FC<DatePickerWithPresetsProps> = ({ startDate, end
         setDisplayValue('Select a date range');
       }
     } else {
+      // Handle All Time case where dates are empty
       setLocalDateRange(undefined);
-      setDisplayValue('Select a date range');
+      setDisplayValue('All Time');
     }
   }, [startDate, endDate]);
 
@@ -68,11 +69,13 @@ const DatePresetPicker: React.FC<DatePickerWithPresetsProps> = ({ startDate, end
   }, [containerRef]);
 
   const handlePresetClick = (preset: string) => {
-    let from: Date, to: Date;
+    let from: Date | undefined, to: Date | undefined;
+    // ... (preset logic is correct) ...
     switch (preset) {
       case 'this_week': from = startOfWeek(new Date()); to = endOfWeek(new Date()); break;
       case 'this_month': from = startOfMonth(new Date()); to = endOfMonth(new Date()); break;
       case 'this_year': from = startOfYear(new Date()); to = endOfYear(new Date()); break;
+      case 'all_time': from = undefined; to = undefined; break;
       default:
         if (/^\d{4}$/.test(preset)) {
           const year = parseInt(preset, 10);
@@ -80,7 +83,7 @@ const DatePresetPicker: React.FC<DatePickerWithPresetsProps> = ({ startDate, end
           to = endOfYear(new Date(year, 11, 31));
         } else return;
     }
-    onDatesChange(format(from, 'yyyy-MM-dd'), format(to, 'yyyy-MM-dd'));
+    onDatesChange(from ? format(from, 'yyyy-MM-dd') : '', to ? format(to, 'yyyy-MM-dd') : '');
     setIsOpen(false);
   };
 
@@ -105,6 +108,7 @@ const DatePresetPicker: React.FC<DatePickerWithPresetsProps> = ({ startDate, end
               <button onClick={() => handlePresetClick('this_week')} className="text-left p-2 rounded hover:bg-gray-700">This Week</button>
               <button onClick={() => handlePresetClick('this_month')} className="text-left p-2 rounded hover:bg-gray-700">This Month</button>
               <button onClick={() => handlePresetClick('this_year')} className="text-left p-2 rounded hover:bg-gray-700">This Year</button>
+              <button onClick={() => handlePresetClick('all_time')} className="text-left p-2 rounded hover:bg-gray-700">All Time</button>
               <div className="border-t border-gray-700 my-2"></div>
               {years?.map(year => (
                 <button key={year} onClick={() => handlePresetClick(year.toString())} className="text-left p-2 rounded hover:bg-gray-700">{year}</button>
@@ -116,6 +120,12 @@ const DatePresetPicker: React.FC<DatePickerWithPresetsProps> = ({ startDate, end
                 selected={localDateRange}
                 onSelect={setLocalDateRange}
                 numberOfMonths={1}
+                className="text-white"
+                style={{
+                  '--rdp-accent-color': '#3b82f6',
+                  '--rdp-accent-background-color': 'rgba(59, 130, 246, 0.25)',
+                  '--rdp-range_middle-color': '#ffffff',
+                } as React.CSSProperties}
               />
             </div>
           </div>

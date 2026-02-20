@@ -74,40 +74,44 @@ const SpendingChart: React.FC<SpendingChartProps> = ({ data, compact = false, st
       <div className="p-4 sm:p-6">
         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Category Breakdown</h3>
 
-        {/* Donut Chart - Centered */}
-        <div className="flex justify-center mb-6">
-          <div className={`relative ${compact ? 'w-36 h-36' : 'w-48 h-48 sm:w-56 sm:h-56'}`}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={compact ? "60%" : "65%"}
-                  outerRadius={compact ? "85%" : "90%"}
-                  paddingAngle={2}
-                  fill="#8884d8"
-                  dataKey="total"
-                  stroke="none"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-              <p className={`font-bold text-white ${compact ? 'text-xl' : 'text-2xl sm:text-3xl'}`}>
-                {formatCurrency(totalSpending)}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">Spent this month</p>
+        {/* Side-by-side: donut chart left, category list right */}
+        <div className={`flex ${compact ? 'flex-col' : 'flex-col lg:flex-row lg:gap-8 lg:items-start'}`}>
+
+          {/* Donut Chart */}
+          <div className={`flex-shrink-0 flex justify-center ${compact ? 'mb-4' : 'mb-6 lg:mb-0 lg:sticky lg:top-0'}`}>
+            <div className={`relative ${compact ? 'w-36 h-36' : 'w-52 h-52 sm:w-60 sm:h-60'}`}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={compact ? "60%" : "65%"}
+                    outerRadius={compact ? "85%" : "90%"}
+                    paddingAngle={2}
+                    fill="#8884d8"
+                    dataKey="total"
+                    stroke="none"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                <p className={`font-bold text-white ${compact ? 'text-xl' : 'text-2xl sm:text-3xl'}`}>
+                  {formatCurrency(totalSpending)}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Total spent</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Category List */}
-        <div className="space-y-0 border-t border-gray-800 pt-4">
-          {chartData.slice(0, displayLimit).map((entry, index) => {
+          {/* Category List */}
+          <div className={`flex-1 min-w-0 ${compact ? '' : 'border-t lg:border-t-0 lg:border-l border-gray-800 pt-4 lg:pt-0 lg:pl-6'}`}>
+            <div className="space-y-0">
+            {chartData.slice(0, displayLimit).map((entry, index) => {
             const Icon = CATEGORY_ICONS[entry.name] || ShoppingBag;
             const color = COLORS[index % COLORS.length];
             const hasSubCategories = (entry.subCategories?.length ?? 0) > 0;
@@ -205,7 +209,9 @@ const SpendingChart: React.FC<SpendingChartProps> = ({ data, compact = false, st
                 )}
               </div>
             );
-          })}
+            })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

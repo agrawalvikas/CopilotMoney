@@ -468,7 +468,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => setFilters({ startDate: e.target.value })}
-                className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 [color-scheme:dark]"
               />
             </div>
             <div>
@@ -477,7 +477,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => setFilters({ endDate: e.target.value })}
-                className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 [color-scheme:dark]"
               />
             </div>
           </div>

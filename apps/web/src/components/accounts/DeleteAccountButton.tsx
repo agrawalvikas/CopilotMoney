@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface DeleteAccountButtonProps {
@@ -26,7 +27,7 @@ const DeleteAccountButton: React.FC<DeleteAccountButtonProps> = ({ accountId, ac
       await api.delete(`/api/v1/accounts/${accountId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      router.refresh(); // Re-run the server component to reflect the deletion
+      router.refresh();
     } catch {
       alert('Failed to delete account.');
       setIsDeleting(false);
@@ -37,9 +38,10 @@ const DeleteAccountButton: React.FC<DeleteAccountButtonProps> = ({ accountId, ac
     <button
       onClick={handleDelete}
       disabled={isDeleting}
-      className="px-3 py-1 text-sm font-medium text-white bg-red-700 rounded-md hover:bg-red-800 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      title={`Delete ${accountName}`}
+      className="p-1.5 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed rounded"
     >
-      {isDeleting ? 'Deleting...' : 'Delete'}
+      <Trash2 className={`w-4 h-4 ${isDeleting ? 'animate-pulse' : ''}`} />
     </button>
   );
 };
